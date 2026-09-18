@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "ProPortal → iCal",
+  "version": "1.0.0",
+  "description": "Detects ProPortal timetable and sends it to prop2ical Elysia server for iCal conversion",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://localhost:3000/*", "https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*ProPortal/pages/ilp/prosolution/26_1/pstimetable.aspx*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "ProPortal → iCal",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

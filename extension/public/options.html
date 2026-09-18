@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>prop2ical options</title>
+<style>body{font-family:system-ui;padding:24px;max-width:520px}input{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;margin-top:4px}label{display:block;margin-top:12px}button{margin-top:12px;padding:8px 16px}code{font-size:11px;background:#eee;padding:1px 4px;border-radius:4px}</style>
+</head>
+<body>
+<h2>prop2ical options</h2>
+<label>Server URL <input id="serverUrl" placeholder="http://localhost:3000"></label>
+<label>Auth token <span style="color:#666;font-size:12px">(RANDOM_IDENTIFER on server)</span>
+  <input id="authToken" type="password" placeholder="same secret as server .env"></label>
+<p style="color:#666;font-size:12px">Like <code>elt2ical</code>: must match <code>RANDOM_IDENTIFER</code>/<code>AUTH_TOKEN</code> on the server. The iCal URL is <code>/api/ical/&lt;secret&gt;</code>.</p>
+<button id="save">Save</button>
+<span id="s"></span>
+<script src="options.js"></script>
+</body>
+</html>

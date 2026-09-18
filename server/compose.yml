@@ -1,0 +1,18 @@
+services:
+  prop2ical:
+    build:
+      context: .
+    env_file: .env
+    restart: always
+    ports:
+      - "28504:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3000/health | jq -e '.ok == true' >/dev/null",
+        ]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+      start_period: 10s

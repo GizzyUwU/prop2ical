@@ -1,0 +1,8 @@
+# deps
+extension/node_modules/
+server/node_modules/
+extension/dist/
+server/data/
+server/.env
+*.log
+.DS_Store
