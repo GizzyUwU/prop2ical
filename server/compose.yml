@@ -1,9 +1,9 @@
 services:
   prop2ical:
     build:
-      context: .
+      context: ./server
       dockerfile: Dockerfile
-    env_file: .env
+    env_file: ./server/.env
     restart: always
     ports:
       - "28504:3000"
