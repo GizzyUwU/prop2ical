@@ -71,28 +71,45 @@ async function loadPersisted(): Promise<void> {
   }
 }
 await loadPersisted();
+function normalizeTimezone(tz: string): string {
+  if (tz.includes("United Kingdom") || tz.includes("GMT+01:00") || tz === "GMT+01:00") return "Europe/London";
+  return tz;
+}
 function parseDateHeader(header: string, tz: string): DateTime | null {
-  let dt = DateTime.fromFormat(header.trim(), "ccc dd/MM/yy", { zone: tz });
+  const nTz = normalizeTimezone(tz);
+  let dt = DateTime.fromFormat(header.trim(), "ccc dd/MM/yy", { zone: nTz });
   if (dt.isValid) return dt;
-  dt = DateTime.fromFormat(header.trim(), "ccc dd/MM/yyyy", { zone: tz });
+  dt = DateTime.fromFormat(header.trim(), "ccc dd/MM/yyyy", { zone: nTz });
   if (dt.isValid) return dt;
   const m = header.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})/);
   if (m) {
     const part = m[1];
-    dt = part.split("/")[2].length === 2 ? DateTime.fromFormat(part, "dd/MM/yy", { zone: tz }) : DateTime.fromFormat(part, "dd/MM/yyyy", { zone: tz });
+    dt = part.split("/")[2].length === 2 ? DateTime.fromFormat(part, "dd/MM/yy", { zone: nTz }) : DateTime.fromFormat(part, "dd/MM/yyyy", { zone: nTz });
     if (dt.isValid) return dt;
   }
-  dt = DateTime.fromISO(header, { zone: tz });
+  dt = DateTime.fromISO(header, { zone: nTz });
   if (dt.isValid) return dt;
   return null;
 }
 function buildCalendar(events: ParsedInput[], tz: string): string {
+  const ianaTz = normalizeTimezone(tz);
+  const displayTz = tz;
   const cal = ical({ name: "ProPortal Timetable" });
-  cal.timezone({ name: tz, generator: getVtimezoneComponent });
+  if (ianaTz === displayTz) {
+    cal.timezone({ name: ianaTz, generator: getVtimezoneComponent });
+  } else {
+    cal.timezone({
+      name: displayTz,
+      generator: () => {
+        const raw = getVtimezoneComponent(ianaTz) as unknown as string;
+        return typeof raw === "string" ? raw.replace(`TZID:${ianaTz}`, `TZID:${displayTz}`) : raw;
+      },
+    });
+  }
   for (const ev of events) {
     let day = parseDateHeader(ev.date, tz);
     if (!day || !day.isValid) {
-      day = DateTime.fromISO(ev.date, { zone: tz });
+      day = DateTime.fromISO(ev.date, { zone: ianaTz });
       if (!day || !day.isValid) continue;
     }
     const [sh, sm] = ev.start.split(":").map(Number);
@@ -106,7 +123,7 @@ function buildCalendar(events: ParsedInput[], tz: string): string {
       summary: ev.title || "Lesson",
       description: ev.staff ? `Staff: ${ev.staff}` : undefined,
       location: ev.room || undefined,
-      timezone: tz,
+      timezone: displayTz,
     });
   }
   return cal.toString();
@@ -159,7 +176,7 @@ const app = new Elysia()
       if (!payload?.events || !Array.isArray(payload.events) || payload.events.length === 0) {
         return Response.json({ error: "No events provided" }, { status: 400 });
       }
-      const icalStr = buildCalendar(payload.events, process.env.TIMEZONE || "Europe/London");
+      const icalStr = buildCalendar(payload.events, normalizeTimezone(process.env.TIMEZONE || "(GMT+01:00) United Kingdom Time"));
       const createdAt = new Date().toISOString();
       const randomId = Bun.randomUUIDv7();
       store.set(secretId!, { ical: icalStr, events: payload.events, createdAt });
@@ -213,7 +230,7 @@ const app = new Elysia()
       if (authErr) return authErr;
       const payload = body as TimetablePayload;
       if (!payload?.events?.length) return Response.json({ error: "No events" }, { status: 400 });
-      const icalStr = buildCalendar(payload.events, process.env.TIMEZONE || "Europe/London");
+      const icalStr = buildCalendar(payload.events, normalizeTimezone(process.env.TIMEZONE || "(GMT+01:00) United Kingdom Time"));
       return new Response(icalStr, {
         headers: {
           "Content-Type": "text/calendar; charset=utf-8",
