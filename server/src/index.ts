@@ -93,19 +93,8 @@ function parseDateHeader(header: string, tz: string): DateTime | null {
 }
 function buildCalendar(events: ParsedInput[], tz: string): string {
   const ianaTz = normalizeTimezone(tz);
-  const displayTz = tz;
   const cal = ical({ name: "ProPortal Timetable" });
-  if (ianaTz === displayTz) {
-    cal.timezone({ name: ianaTz, generator: getVtimezoneComponent });
-  } else {
-    cal.timezone({
-      name: displayTz,
-      generator: () => {
-        const raw = getVtimezoneComponent(ianaTz) as unknown as string;
-        return typeof raw === "string" ? raw.replace(`TZID:${ianaTz}`, `TZID:${displayTz}`) : raw;
-      },
-    });
-  }
+  cal.timezone({ name: ianaTz, generator: getVtimezoneComponent });
   for (const ev of events) {
     let day = parseDateHeader(ev.date, tz);
     if (!day || !day.isValid) {
@@ -123,7 +112,7 @@ function buildCalendar(events: ParsedInput[], tz: string): string {
       summary: ev.title || "Lesson",
       description: ev.staff ? `Staff: ${ev.staff}` : undefined,
       location: ev.room || undefined,
-      timezone: displayTz,
+      timezone: ianaTz,
     });
   }
   return cal.toString();
@@ -176,7 +165,7 @@ const app = new Elysia()
       if (!payload?.events || !Array.isArray(payload.events) || payload.events.length === 0) {
         return Response.json({ error: "No events provided" }, { status: 400 });
       }
-      const icalStr = buildCalendar(payload.events, normalizeTimezone(process.env.TIMEZONE || "(GMT+01:00) United Kingdom Time"));
+      const icalStr = buildCalendar(payload.events, process.env.TIMEZONE || "Europe/London");
       const createdAt = new Date().toISOString();
       const randomId = Bun.randomUUIDv7();
       store.set(secretId!, { ical: icalStr, events: payload.events, createdAt });
@@ -230,7 +219,7 @@ const app = new Elysia()
       if (authErr) return authErr;
       const payload = body as TimetablePayload;
       if (!payload?.events?.length) return Response.json({ error: "No events" }, { status: 400 });
-      const icalStr = buildCalendar(payload.events, normalizeTimezone(process.env.TIMEZONE || "(GMT+01:00) United Kingdom Time"));
+      const icalStr = buildCalendar(payload.events, process.env.TIMEZONE || "Europe/London");
       return new Response(icalStr, {
         headers: {
           "Content-Type": "text/calendar; charset=utf-8",
