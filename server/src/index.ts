@@ -105,8 +105,9 @@ function buildCalendar(events: ParsedInput[], tz: string): string {
     const start = day.set({ hour: sh, minute: sm, second: 0, millisecond: 0 });
     const end = day.set({ hour: eh, minute: em, second: 0, millisecond: 0 });
     cal.createEvent({
-      start: start.toJSDate(),
-      end: end.toJSDate(),
+      start: start,
+      end: end,
+      floating: true,
       summary: ev.title || "Lesson",
       description: ev.staff ? `Staff: ${ev.staff}` : undefined,
       location: ev.room || undefined,
