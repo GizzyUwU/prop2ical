@@ -2,7 +2,6 @@ import { Elysia, t } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import ical from "ical-generator";
-import { getVtimezoneComponent } from "@touch4it/ical-timezones";
 import { DateTime } from "luxon";
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -94,7 +93,6 @@ function parseDateHeader(header: string, tz: string): DateTime | null {
 function buildCalendar(events: ParsedInput[], tz: string): string {
   const ianaTz = normalizeTimezone(tz);
   const cal = ical({ name: "ProPortal Timetable" });
-  cal.timezone({ name: ianaTz, generator: getVtimezoneComponent });
   for (const ev of events) {
     let day = parseDateHeader(ev.date, tz);
     if (!day || !day.isValid) {
@@ -112,7 +110,6 @@ function buildCalendar(events: ParsedInput[], tz: string): string {
       summary: ev.title || "Lesson",
       description: ev.staff ? `Staff: ${ev.staff}` : undefined,
       location: ev.room || undefined,
-      timezone: ianaTz,
     });
   }
   return cal.toString();
